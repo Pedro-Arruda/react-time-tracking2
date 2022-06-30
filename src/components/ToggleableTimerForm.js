@@ -1,43 +1,36 @@
-import { Component } from "react";
+import { useState } from "react";
 import { TimerForm } from "./TimerForm";
 
-export class ToggleableTimerForm extends Component {
-  state = {
-    isOpen: false,
+export const ToggleableTimerForm = ({ onFormSubmit }) => {
+  const [isOpen, setIsOpen] = useState(false);
+
+  const handleFormOpen = () => {
+    setIsOpen(true);
   };
 
-  handleFormOpen = () => {
-    this.setState({ isOpen: true });
+  const handleFormClose = () => {
+    setIsOpen(false);
   };
 
-  handleFormClose = () => {
-    this.setState({ isOpen: false });
+  const handleFormSubmit = (timer) => {
+    onFormSubmit(timer);
+    setIsOpen(false);
   };
 
-  handleFormSubmit = (timer) => {
-    this.props.onFormSubmit(timer);
-    this.setState({ isOpen: false });
-  };
-
-  render() {
-    if (this.state.isOpen) {
-      return (
-        <TimerForm
-          onFormSubmit={this.handleFormSubmit}
-          onFormClose={this.handleFormClose}
-        />
-      );
-    } else {
-      return (
-        <div className="ui basic content center aligned segment">
-          <button
-            className="ui basic button icon"
-            onClick={this.handleFormOpen}
-          >
-            <i className="plus icon" />
-          </button>
-        </div>
-      );
-    }
+  if (isOpen) {
+    return (
+      <TimerForm
+        onFormSubmit={handleFormSubmit}
+        onFormClose={handleFormClose}
+      />
+    );
+  } else {
+    return (
+      <div className="ui basic content center aligned segment">
+        <button className="ui basic button icon" onClick={handleFormOpen}>
+          <i className="plus icon" />
+        </button>
+      </div>
+    );
   }
-}
+};

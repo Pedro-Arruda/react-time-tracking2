@@ -1,27 +1,68 @@
-import { Component } from "react";
+import { useEffect, useState } from "react";
 import { client } from "../utils/client";
 import { helpers } from "../utils/helpers";
 import { EditableTimerList } from "./EditableTimerList";
 import { ToggleableTimerForm } from "./ToggleableTimerForm";
 
-export class TimersDashboard extends Component {
-  state = {
-    timers: [],
+export const TimersDashboard = () => {
+  const [timers, setTimers] = useState([]);
+
+  useEffect(() => {
+    loadTimersFromServer();
+    setInterval(loadTimersFromServer, 5000);
+  }, []);
+
+  const handleStartClick = (timerId) => {
+    startTimer(timerId);
   };
 
-  componentDidMount() {
-    this.loadTimersFromServer();
-    setInterval(this.loadTimersFromServer, 5000);
-  }
-
-  loadTimersFromServer = () => {
-    client.getTimers((serverTimers) => this.setState({ timers: serverTimers }));
+  const handleStopClick = (timerId) => {
+    stopTimer(timerId);
   };
 
-  startTimer = (timerId) => {
+  const handleTrashClick = (timerId) => {
+    deleteTimer(timerId);
+  };
+
+  const handleEditFormSubmit = (attrs) => {
+    updateTimer(attrs);
+  };
+
+  const handleCreateFormSubmit = (timer) => {
+    createTimer(timer);
+  };
+
+  const createTimer = (timer) => {
+    const t = helpers.newTimer(timer);
+    setTimers(timers.concat(t));
+    client.createTimer(t);
+  };
+
+  const updateTimer = (attrs) => {
+    setTimers(
+      timers.map((timer) => {
+        if (timer.id === attrs.id) {
+          return Object.assign({}, timer, {
+            title: attrs.title,
+            project: attrs.project,
+          });
+        } else {
+          return timer;
+        }
+      })
+    );
+
+    client.updateTimer(attrs);
+  };
+
+  const loadTimersFromServer = () => {
+    client.getTimers((serverTimers) => setTimers(serverTimers));
+  };
+
+  const startTimer = (timerId) => {
     const now = Date.now();
-    this.setState({
-      timers: this.state.timers.map((timer) => {
+    setTimers(
+      timers.map((timer) => {
         if (timer.id === timerId) {
           return Object.assign({}, timer, {
             runningSince: now,
@@ -29,15 +70,15 @@ export class TimersDashboard extends Component {
         } else {
           return timer;
         }
-      }),
-    });
+      })
+    );
     client.startTimer({ id: timerId, start: now });
   };
 
-  stopTimer = (timerId) => {
+  const stopTimer = (timerId) => {
     const now = Date.now();
-    this.setState({
-      timers: this.state.timers.map((timer) => {
+    setTimers(
+      timers.map((timer) => {
         if (timer.id === timerId) {
           const lastElapsed = now - timer.runningSince;
           return Object.assign({}, timer, {
@@ -47,78 +88,29 @@ export class TimersDashboard extends Component {
         } else {
           return timer;
         }
-      }),
-    });
+      })
+    );
     client.stopTimer({ id: timerId, stop: now });
   };
 
-  deleteTimer = (timerId) => {
-    this.setState({
-      timers: this.state.timers.filter((t) => t.id !== timerId),
-    });
+  const deleteTimer = (timerId) => {
+    setTimers(timers.filter((t) => t.id !== timerId));
 
     client.deleteTimer({ id: timerId });
   };
 
-  handleStartClick = (timerId) => {
-    this.startTimer(timerId);
-  };
-
-  handleStopClick = (timerId) => {
-    this.stopTimer(timerId);
-  };
-
-  handleTrashClick = (timerId) => {
-    this.deleteTimer(timerId);
-  };
-
-  handleEditFormSubmit = (attrs) => {
-    this.updateTimer(attrs);
-  };
-
-  handleCreateFormSubmit = (timer) => {
-    this.createTimer(timer);
-  };
-
-  createTimer = (timer) => {
-    const t = helpers.newTimer(timer);
-    this.setState({
-      timers: this.state.timers.concat(t),
-    });
-    client.createTimer(t);
-  };
-
-  updateTimer = (attrs) => {
-    this.setState({
-      timers: this.state.timers.map((timer) => {
-        if (timer.id === attrs.id) {
-          return Object.assign({}, timer, {
-            title: attrs.title,
-            project: attrs.project,
-          });
-        } else {
-          return timer;
-        }
-      }),
-    });
-
-    client.updateTimer(attrs);
-  };
-
-  render() {
-    return (
-      <div className="ui three column centered grid">
-        <div className="column">
-          <EditableTimerList
-            timers={this.state.timers}
-            onFormSubmit={this.handleEditFormSubmit}
-            onTrashClick={this.handleTrashClick}
-            onStartClick={this.handleStartClick}
-            onStopClick={this.handleStopClick}
-          />
-          <ToggleableTimerForm onFormSubmit={this.handleCreateFormSubmit} />
-        </div>
+  return (
+    <div className="ui three column centered grid">
+      <div className="column">
+        <EditableTimerList
+          timers={timers}
+          onFormSubmit={handleEditFormSubmit}
+          onTrashClick={handleTrashClick}
+          onStartClick={handleStartClick}
+          onStopClick={handleStopClick}
+        />
+        <ToggleableTimerForm onFormSubmit={handleCreateFormSubmit} />
       </div>
-    );
-  }
-}
+    </div>
+  );
+};
